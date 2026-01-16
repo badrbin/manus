@@ -3,11 +3,7 @@ from frappe import _
 from frappe.utils import flt
 
 def validate_material_request_against_billed(doc, method=None):
-    """
-    التحقق من عدم تجاوز طلب المواد للكمية المفوترة
-    """
     if doc.docstatus == 1 and doc.sales_order:
-        # جلب المفوتر
         billed_data = frappe.db.sql("""
             SELECT item_code, SUM(qty) as total_billed 
             FROM `tabSales Invoice Item` 
@@ -16,7 +12,6 @@ def validate_material_request_against_billed(doc, method=None):
         """, (doc.sales_order,), as_dict=True)
         billed_map = {d.item_code: flt(d.total_billed) for d in billed_data}
 
-        # جلب المستهلك سابقاً
         prev_mr_data = frappe.db.sql("""
             SELECT child.item_code, SUM(child.qty) as total_qty 
             FROM `tabMaterial Request` par 
@@ -26,7 +21,6 @@ def validate_material_request_against_billed(doc, method=None):
         """, (doc.sales_order, doc.name or "NEW"), as_dict=True)
         prev_qty_map = {d.item_code: flt(d.total_qty) for d in prev_mr_data}
 
-        # تجميع كميات الطلب الحالي
         current_request_map = {}
         for item in doc.items:
             current_request_map[item.item_code] = current_request_map.get(item.item_code, 0) + flt(item.qty)
@@ -54,29 +48,20 @@ def validate_material_request_against_billed(doc, method=None):
             )
 
 def validate_payment_entry_supplier(doc, method=None):
-    """
-    منع استخدام الموردين في سند الدفع
-    """
     if doc.party_type == "Supplier":
         frappe.throw(_("عذراً، لا يُسمح باستخدام الموردين (Suppliers) في شاشة سند الدفع نهائياً، يرجى استخدام قيد اليومية."))
 
 def validate_sales_invoice_qty_against_so(doc, method=None):
-    """
-    منع تجاوز كمية أمر البيع في الفاتورة
-    """
     for item in doc.items:
         if item.sales_order and item.so_detail:
             so_qty = frappe.db.get_value("Sales Order Item", item.so_detail, "qty") or 0
-            
             billed_qty_history = frappe.db.sql("""
                 SELECT SUM(qty) 
                 FROM `tabSales Invoice Item` 
                 WHERE so_detail = %s AND docstatus = 1 AND parent != %s
             """, (item.so_detail, doc.name))
-            
             prev_billed_qty = flt(billed_qty_history[0][0]) if billed_qty_history else 0.0
             remaining_qty = so_qty - prev_billed_qty
-            
             if flt(item.qty) > flt(remaining_qty) + 0.001:
                 frappe.throw(
                     msg=_("خطأ في الصنف (Row #{0}): الكمية المدخلة ({1}) تتجاوز الكمية المتبقية في أمر البيع ({2}).").format(
