@@ -1,0 +1,10 @@
+include *.txt
+include *.md
+recursive-include manus *.py
+recursive-include manus *.html
+recursive-include manus *.js
+recursive-include manus *.css
+recursive-include manus *.png
+recursive-include manus *.jpg
+recursive-include manus *.svg
+recursive-include manus *.json
