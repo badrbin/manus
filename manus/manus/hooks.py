@@ -8,12 +8,12 @@ app_license = "mit"
 # Document Events
 doc_events = {
     "Material Request": {
-        "validate": "manus.manus.api.validations.validate_material_request_against_billed"
+        "validate": "manus.api.validations.validate_material_request_against_billed"
     },
     "Payment Entry": {
-        "validate": "manus.manus.api.validations.validate_payment_entry_supplier"
+        "validate": "manus.api.validations.validate_payment_entry_supplier"
     },
     "Sales Invoice": {
-        "validate": "manus.manus.api.validations.validate_sales_invoice_qty_against_so"
+        "validate": "manus.api.validations.validate_sales_invoice_qty_against_so"
     }
 }
